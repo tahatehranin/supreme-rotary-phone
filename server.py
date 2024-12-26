@@ -3,7 +3,7 @@ import threading
 import time
 
 ip = '0.0.0.0'  # Listen on all interfaces
-port = 4401
+port = 4404
 tcpSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcpSocket.bind((ip, port))
 tcpSocket.listen(5)
@@ -11,12 +11,12 @@ tcpSocket.listen(5)
 print("Server is listening on port", port)
 
 # لیست IP های مجاز
-allowed_ips = ['127.0.0.1', '192.168.1.2']
+allowed_ips = ['127.0.0.1', ' 195.181.25.218']
 
 # پیام‌های متفاوت برای هر کلاینت بر اساس IP
 messages = {
     '127.0.0.1': [b"Hello Client 1, you are connected!", b"Second message for Client 1 after 1 minute."],
-    '192.168.1.2': [b"Hello Client 2, you are connected!", b"Second message for Client 2 after 1 minute."],
+    '195.181.25.218': [b"Hello Client 2, you are connected!", b"Second message for Client 2 after 1 minute."],
 }
 
 def handle_client(client_socket, addr):
