@@ -1,0 +1,17 @@
+# Dockerfile for server
+FROM python:3.8-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Create a working directory
+WORKDIR /app
+
+# Copy the server script into the container
+COPY server.py .
+
+# Install any necessary packages (if needed)
+# RUN pip install <package_name>
+
+# Command to run the server
+CMD ["python", "server.py"]

@@ -1,0 +1,17 @@
+# Dockerfile for client
+FROM python:3.8-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Create a working directory
+WORKDIR /app
+
+# Copy the client script into the container
+COPY client.py .
+
+# Install any necessary packages (if needed)
+# RUN pip install <package_name>
+
+# Command to run the client
+CMD ["python", "client.py"]
