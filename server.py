@@ -3,7 +3,7 @@ import threading
 import time
 
 ip = '0.0.0.0'  # Listen on all interfaces
-port = 4401
+port = 4404
 tcpSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcpSocket.bind((ip, port))
 tcpSocket.listen(5)
