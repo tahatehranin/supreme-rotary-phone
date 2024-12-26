@@ -1,28 +1,36 @@
 import socket
+import time
 
-# تنظیمات سرور
-server_ip = '127.0.0.1'  # یا آدرس IP سرور
-server_port = 4404
+server_ip = '127.0.0.1'  # Change this to the server's IP if needed
+server_port = 4401
 
-# ایجاد سوکت
+# Create a TCP socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 try:
-    # اتصال به سرور
+    # Connect to the server
     client_socket.connect((server_ip, server_port))
-    print("Connected to server at {}:{}".format(server_ip, server_port))
+    print("Connected to the server.")
 
-    while True:
-        # دریافت پیام از سرور
-        message = client_socket.recv(1024).decode()  # حداکثر 1024 بایت
+    # Prepare the packet
+    packet = '+CMGR: "REC UNREAD","SRVGPRS","","24/12/15,22:09:37+0330"\r\n^Sample string$\r\n'
+    
+    # Send the packet
+    client_socket.send(packet.encode('utf-8'))
+    print("Packet sent.")
 
-        if not message:
-            break  # اگر پیامی وجود نداشت، حلقه را ترک کن
+    # Wait for the ACK from the server
+    ack = client_socket.recv(1024).decode('utf-8')
+    print("Received ACK from server:", ack)
 
-        # نمایش پیام دریافت شده
-        print("Received:", message)
+    # Wait for the second message from the server
+    second_message = client_socket.recv(1024).decode('utf-8')
+    print("Received second message from server:", second_message)
 
+except Exception as e:
+    print(f"An error occurred: {e}")
 finally:
-    # قطع ارتباط
+ ```python
+    # Close the client socket
     client_socket.close()
     print("Connection closed.")
