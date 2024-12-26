@@ -2,7 +2,7 @@ import socket
 
 # تنظیمات سرور
 server_ip = '127.0.0.1'  # یا آدرس IP سرور
-server_port = 4401
+server_port = 4404
 
 # ایجاد سوکت
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
