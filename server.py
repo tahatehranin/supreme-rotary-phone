@@ -11,7 +11,7 @@ tcpSocket.listen(5)
 print("Server is listening on port", port)
 
 # لیست IP های مجاز
-allowed_ips = ['127.0.0.1', ' 195.181.25.218']
+allowed_ips = ['127.0.0.1', '195.181.25.218']
 
 # پیام‌های متفاوت برای هر کلاینت بر اساس IP
 messages = {
