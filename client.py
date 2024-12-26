@@ -2,7 +2,7 @@ import socket
 import time
 
 server_ip = '127.0.0.1'  # Change this to the server's IP if needed
-server_port = 4401
+server_port = 4404
 
 # Create a TCP socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
