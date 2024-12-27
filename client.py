@@ -1,36 +1,28 @@
 import socket
 import time
 
-server_ip = '127.0.0.1'  # Change this to the server's IP if needed
-server_port = 4404
+def main():
+    host = '127.0.0.1'
+    port = 4404
 
-# Create a TCP socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((host, port))
 
-try:
-    # Connect to the server
-    client_socket.connect((server_ip, server_port))
-    print("Connected to the server.")
+    try:
+        while True:
+            # Receive data from the server
+            data = client_socket.recv(1024)
+            if not data:
+                break
+            print("Received:", data.decode('utf-8'))
 
-    # Prepare the packet
-    packet = '+CMGR: "REC UNREAD","SRVGPRS","","24/12/15,22:09:37+0330"\r\n^Sample string$\r\n'
-    
-    # Send the packet
-    client_socket.send(packet.encode('utf-8'))
-    print("Packet sent.")
+            # Simulate processing time
+            time.sleep(1)
 
-    # Wait for the ACK from the server
-    ack = client_socket.recv(1024).decode('utf-8')
-    print("Received ACK from server:", ack)
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        client_socket.close()
 
-    # Wait for the second message from the server
-    second_message = client_socket.recv(1024).decode('utf-8')
-    print("Received second message from server:", second_message)
-
-except Exception as e:
-    print(f"An error occurred: {e}")
-finally:
- ```python
-    # Close the client socket
-    client_socket.close()
-    print("Connection closed.")
+if __name__ == "__main__":
+    main()
