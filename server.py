@@ -1,88 +1,120 @@
 import socket
 import threading
 import time
+import datetime
 
-ip = '0.0.0.0'  # Listen on all interfaces
+ip = '0.0.0.0'
 port = 4404
 tcpSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcpSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 tcpSocket.bind((ip, port))
 tcpSocket.listen(5)
 
 print("Server is listening on port", port)
 
-# List of allowed IPs (if needed)
-allowed_ips = ['127.0.0.1', '192.168.1.2']
+# نگهداری اطلاعات کلاینت‌ها
+client_connections = {}
+client_count = 0
 
-# Different messages for each client based on IP
-messages = {
-    '127.0.0.1': [b"Hello Client 1, you are connected!", b"Second message for Client 1 after 1 minute."],
-    '192.168.1.2': [b"Hello Client 2, you are connected!", b"Second message for Client 2 after 1 minute."],
+# پیام‌های مختلف برای کلاینت‌های مختلف
+client_messages = {
+    0: ["hi tehran", "nice to me to"],
+    1: ["hi shiraz", "nice to me to"],
+    2: ["hi mashhad", "nice to me to"],
+    3: ["hi tabriz", "nice to me to"]
 }
 
-def handle_client(client_socket, addr):
-    print("Connection from", addr)
+def create_sample_packet():
+    current_time = datetime.datetime.now()
+    formatted_time = current_time.strftime("%y/%m/%d,%H:%M:%S")
+    packet = f'+CMGR: "REC UNREAD","SRVGPRS","","{formatted_time}+0330"\r\n^Sample string$\r\n'
+    return packet.encode('utf-8')
+
+def send_message(client_socket, message):
+    try:
+        client_socket.send(message.encode('utf-8'))
+        return True
+    except Exception as e:
+        print(f"Error sending message: {e}")
+        return False
+
+def handle_client(client_socket, addr, client_id):
+    print(f"New connection from {addr}, Client ID: {client_id}")
     
-    # Check client IP
-    if addr[0] in allowed_ips or not allowed_ips:  # Allow all if the list is empty
-        try:
-            # Read the incoming packet
-            packet = client_socket.recv(1024).decode('utf-8')
-            print("Received packet:", packet)
+    client_connections[addr] = datetime.datetime.now()
+    client_specific_messages = client_messages.get(client_id % len(client_messages))
+    message_index = 0
+    
+    try:
+        while True:
+            current_time = datetime.datetime.now()
+            connection_time = client_connections.get(addr)
+            if connection_time and (current_time - connection_time).days > 30:
+                print(f"Client {addr} connection expired (30 days limit)")
+                break
 
-            # Validate packet format
-            if packet.startswith("+CMGR:") and packet.endswith("\r\n"):
-                # Extract the string part
-                string_part = packet.split("\r\n")[1]
-                if string_part.startswith("^") and string_part.endswith("$"):
-                    print("Valid packet received. Sending ACK...")
+            try:
+                # 1. Send Sample Packet
+                sample_packet = create_sample_packet()
+                client_socket.send(sample_packet)
+                print(f"Sent Sample Packet to {addr}")
 
-                    # Send ACK packet
-                    ack_packet = "At+cipsend\r\n%60&"
-                    try:
-                        client_socket.send(ack_packet.encode('utf-8'))
-                    except BrokenPipeError:
-                        print("Failed to send ACK, client may have disconnected.")
+                time.sleep(0.5)  # Short delay
+
+                # 2. Send ACK
+                ack_packet = "At+cipsend\r\n%60&"
+                client_socket.send(ack_packet.encode('utf-8'))
+                print(f"Sent ACK to {addr}")
+
+                time.sleep(0.5)  # Short delay
+
+                # 3. Send normal message
+                current_message = client_specific_messages[message_index]
+                if send_message(client_socket, current_message):
+                    print(f"Sent message '{current_message}' to {addr}")
                 else:
-                    print("Invalid string format.")
-                    try:
-                        client_socket.send(b"Invalid packet format.")
-                    except BrokenPipeError:
-                        print("Failed to send error message, client may have disconnected.")
-            else:
-                print("Invalid packet header.")
-                try:
-                    client_socket.send(b"Invalid packet format.")
-                except BrokenPipeError:
-                    print("Failed to send error message, client may have disconnected.")
-            
-            # Delay for one minute
-            time.sleep(60)
-            
-            # Send second message
-            if addr[0] in messages:
-                try:
-                    client_socket.send(messages[addr[0]][1])
-                except BrokenPipeError:
-                    print("Failed to send second message, client may have disconnected.")
-            else:
-                try:
-                    client_socket.send(b"Unknown message for you.")
-                except BrokenPipeError:
-                    print("Failed to send unknown message, client may have disconnected.")
-        except Exception as e:
-            print(f"Error in processing data: {e}")
-    else:
-        print(f"Connection from {addr[0]} rejected.")
-        try:
-            client_socket.send(b"Access denied. You are not allowed to connect.")
-        except BrokenPipeError:
-            print("Failed to send access denied message, client may have disconnected.")
-    
-    client_socket.close()
+                    print(f"Failed to send message to {addr}. Closing connection.")
+                    break
+                
+                message_index = (message_index + 1) % len(client_specific_messages)
+            except Exception as e:
+                print(f"Error in communication with {addr}: {e}")
+                break
 
-while True:
-    client, addr = tcpSocket.accept()
-    
-    # Create a thread to handle the client
-    client_thread = threading.Thread(target=handle_client, args=(client, addr))
-    client_thread.start()
+            time.sleep(60)
+
+    except Exception as e:
+        print(f"Error handling client {addr}: {e}")
+    finally:
+        try:
+            client_socket.close()
+            del client_connections[addr]
+        except:
+            pass
+        print(f"Connection closed with {addr}")
+        
+def accept_connections():
+    global client_count
+    while True:
+        try:
+            client, addr = tcpSocket.accept()
+            client_thread = threading.Thread(target=handle_client, args=(client, addr, client_count))
+            client_thread.daemon = True
+            client_thread.start()
+            client_count += 1
+        except Exception as e:
+            print(f"Error accepting connection: {e}")
+            time.sleep(1)
+
+# شروع thread اصلی پذیرش اتصال‌ها
+main_thread = threading.Thread(target=accept_connections)
+main_thread.daemon = True
+main_thread.start()
+
+# نگه داشتن برنامه
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("\nServer shutting down...")
+    tcpSocket.close()
